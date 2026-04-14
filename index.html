@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoSplice</title>
+    <link rel="icon" href="/videospliceicon.jpg" type="image/jpeg">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <img src="/videospliceicon.jpg" alt="VideoSplice Logo" style="width: 64px; height: 64px; border-radius: 12px; margin-bottom: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+            <h1>VideoSplice</h1>
+            <p>Minimalist video cutter & editor</p>
+        </header>
+        
+        <main>
+            <div id="upload-section" class="card">
+                <input type="file" id="video-input" accept="video/mp4, video/x-m4v, video/webm, video/quicktime">
+                <label for="video-input" class="btn primary-btn">Select Video File</label>
+                <div id="file-name">No file selected</div>
+            </div>
+
+            <div id="editor-section" class="hidden">
+                <div class="toolbar">
+                    <button id="btn-play-pause" class="btn">Play</button>
+                    <button id="btn-add-region" class="btn danger-btn">Add Cut Region</button>
+                    
+                    <div class="spacer"></div>
+                    
+                    <button id="btn-export-mp4" class="btn primary-btn">Save MP4</button>
+                </div>
+                
+                <div id="video-wrapper">
+                    <video id="main-video" controlsList="nodownload"></video>
+                </div>
+
+                <div id="waveform-container">
+                    <div id="waveform"></div>
+                    <div id="waveform-timeline"></div>
+                </div>
+                
+                <div class="instructions-card">
+                    <h3>How to use:</h3>
+                    <div class="guide-steps">
+                        <div class="step">
+                            <span class="step-num">1</span>
+                            <p><b>Highlight:</b> Click <span class="highlight-red">Add Cut Region</span> to drop a red marker on the audio waveform.</p>
+                        </div>
+                        <div class="step">
+                            <span class="step-num">2</span>
+                            <p><b>Refine:</b> Click and drag the handles to cover the exact parts of the video you want to cut out.</p>
+                        </div>
+                        <div class="step">
+                            <span class="step-num">3</span>
+                            <p><b>Preview:</b> Hit <span class="highlight-blue">Play</span> — the red parts will be skipped automatically in the video.</p>
+                        </div>
+                        <div class="step">
+                            <span class="step-num">4</span>
+                            <p><b>Finish:</b> Add more regions if necessary, then click <span class="highlight-green">Save MP4</span>. It will process entirely in your browser!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <div id="loading-overlay" class="hidden">
+            <div class="spinner"></div>
+            <p id="loading-text">Processing...</p>
+            <p id="loading-subtext" style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.7;">(This may take a minute for large videos)</p>
+        </div>
+    </div>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
