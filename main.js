@@ -13,6 +13,7 @@ const btnPlayPause = document.getElementById('btn-play-pause');
 const btnAddRegion = document.getElementById('btn-add-region');
 const btnExportMp4 = document.getElementById('btn-export-mp4');
 const audioChannelSelect = document.getElementById('audio-channel-select');
+const exportModeSelect = document.getElementById('export-mode-select');
 const btnAddPrecise = document.getElementById('btn-add-precise');
 const cutStart = document.getElementById('cut-start');
 const cutEnd = document.getElementById('cut-end');
