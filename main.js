@@ -12,6 +12,12 @@ const editorSection = document.getElementById('editor-section');
 const btnPlayPause = document.getElementById('btn-play-pause');
 const btnAddRegion = document.getElementById('btn-add-region');
 const btnExportMp4 = document.getElementById('btn-export-mp4');
+const audioChannelSelect = document.getElementById('audio-channel-select');
+const btnAddPrecise = document.getElementById('btn-add-precise');
+const cutStart = document.getElementById('cut-start');
+const cutEnd = document.getElementById('cut-end');
+const zoomSlider = document.getElementById('zoom-slider');
+const currentTimeDisplay = document.getElementById('current-time-display');
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingText = document.getElementById('loading-text');
 const mainVideo = document.getElementById('main-video');
@@ -20,6 +26,25 @@ let wavesurfer;
 let wsRegions;
 let activeVideoFile = null;
 let ffmpeg = null;
+
+// Helper to format seconds into mm:ss
+function formatTime(seconds) {
+    if (isNaN(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 10);
+    return `${m}:${s.toString().padStart(2, '0')}.${ms}`;
+}
+
+// Helper to parse mm:ss or seconds into raw seconds
+function parseTime(input) {
+    if (!input) return NaN;
+    if (input.includes(':')) {
+        const parts = input.split(':');
+        return parseInt(parts[0]) * 60 + parseFloat(parts[1]);
+    }
+    return parseFloat(input);
+}
 
 function showLoading(text) {
     loadingText.textContent = text;
@@ -62,15 +87,22 @@ function initWavesurfer() {
         waveColor: '#3b82f6',
         progressColor: '#2563eb',
         cursorColor: '#ffffff',
+        cursorWidth: 2,
+        autoScroll: true,
         barWidth: 2,
         barGap: 1,
         barRadius: 2,
         height: wfHeight,
         normalize: true,
-        minPxPerSec: Number(zoomSlider.value) || 1,
+        minPxPerSec: (zoomSlider && Number(zoomSlider.value)) || 1,
         plugins: [
             TimelinePlugin.create({
                 container: '#waveform-timeline',
+                formatTimeCallback: (seconds) => {
+                    const m = Math.floor(seconds / 60);
+                    const s = Math.floor(seconds % 60);
+                    return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : s;
+                }
             }),
         ],
     });
@@ -87,7 +119,7 @@ function initWavesurfer() {
     // Skip logic for regions (preview cuts)
     wavesurfer.on('timeupdate', (currentTime) => {
         if (currentTimeDisplay) {
-            currentTimeDisplay.textContent = currentTime.toFixed(2);
+            currentTimeDisplay.textContent = formatTime(currentTime);
         }
         
         const regions = wsRegions.getRegions();
@@ -125,6 +157,38 @@ videoInput.addEventListener('change', (e) => {
 btnPlayPause.addEventListener('click', () => {
     wavesurfer.playPause();
 });
+
+if (zoomSlider) {
+    zoomSlider.addEventListener('input', (e) => {
+        if (wavesurfer) {
+            wavesurfer.zoom(Number(e.target.value));
+        }
+    });
+}
+
+if (btnAddPrecise) {
+    btnAddPrecise.addEventListener('click', () => {
+        const start = parseTime(cutStart.value);
+        const end = parseTime(cutEnd.value);
+        const duration = wavesurfer.getDuration();
+        
+        if (isNaN(start) || isNaN(end) || start >= end || start < 0 || end > duration) {
+            alert('Please enter valid start and end times (e.g., 1:30 or 90.5) within the video duration.');
+            return;
+        }
+        
+        wsRegions.addRegion({
+            start: start,
+            end: end,
+            color: 'rgba(239, 68, 68, 0.4)', // Danger red
+            drag: true,
+            resize: true
+        });
+        
+        cutStart.value = '';
+        cutEnd.value = '';
+    });
+}
 
 btnAddRegion.addEventListener('click', () => {
     const duration = wavesurfer.getDuration();
@@ -204,7 +268,7 @@ btnExportMp4.addEventListener('click', async () => {
         }
 
         showLoading('Processing Video... 0%');
-        const audioMode = audioChannelSelect.value;
+        const audioMode = audioChannelSelect ? audioChannelSelect.value : 'both';
 
         if (keepSegments.length === 1) {
             // Only one segment kept, simple trim without concat filter
