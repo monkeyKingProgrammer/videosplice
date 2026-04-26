@@ -47,6 +47,14 @@
                         <input type="range" id="zoom-slider" min="1" max="200" value="1" style="width: 80px;">
                     </div>
                     
+                    <div class="export-options" style="display: flex; gap: 8px; align-items: center; margin-right: 10px;">
+                        <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Mode:</span>
+                        <select id="export-mode-select" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: #10b981; font-family: var(--font); font-size: 0.85rem; padding: 0.3rem; border-radius: 4px; outline: none; cursor: pointer;">
+                            <option value="fast">Fast Cut (Seconds)</option>
+                            <option value="precise">Precise Re-encode (Hours)</option>
+                        </select>
+                    </div>
+                    
                     <div class="audio-channel-options" style="display: flex; gap: 8px; align-items: center; margin-right: 10px;">
                         <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Audio:</span>
                         <select id="audio-channel-select" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: var(--primary); font-family: var(--font); font-size: 0.85rem; padding: 0.3rem; border-radius: 4px; outline: none; cursor: pointer;">

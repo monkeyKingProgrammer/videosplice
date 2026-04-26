@@ -269,64 +269,110 @@ btnExportMp4.addEventListener('click', async () => {
 
         showLoading('Processing Video... 0%');
         const audioMode = audioChannelSelect ? audioChannelSelect.value : 'both';
+        const exportMode = exportModeSelect ? exportModeSelect.value : 'fast';
 
-        if (keepSegments.length === 1) {
-            // Only one segment kept, simple trim without concat filter
-            const seg = keepSegments[0];
+        if (exportMode === 'fast') {
+            const concatTextParts = [];
+            for (let i = 0; i < keepSegments.length; i++) {
+                const seg = keepSegments[i];
+                const chunkName = `chunk${i}.mp4`;
+                
+                showLoading(`Extracting Chunk ${i + 1} of ${keepSegments.length}...`);
+                await ff.exec([
+                    '-i', 'input.mp4',
+                    '-ss', seg.start.toString(),
+                    '-to', seg.end.toString(),
+                    '-c', 'copy',
+                    chunkName
+                ]);
+                concatTextParts.push(`file '${chunkName}'`);
+            }
+            
+            await ff.writeFile('concat.txt', concatTextParts.join('\n'));
+            
             const execArgs = [
-                '-i', 'input.mp4',
-                '-ss', seg.start.toString(),
-                '-to', seg.end.toString(),
-                '-c:v', 'libx264'
+                '-f', 'concat',
+                '-safe', '0',
+                '-i', 'concat.txt',
+                '-c:v', 'copy'
             ];
 
             if (audioMode === 'none') {
                 execArgs.push('-an');
             } else {
-                execArgs.push('-c:a', 'aac');
                 if (audioMode === 'left') {
-                    execArgs.push('-af', 'pan=1c|c0=c0');
+                    execArgs.push('-c:a', 'aac', '-af', 'pan=1c|c0=c0');
                 } else if (audioMode === 'right') {
-                    execArgs.push('-af', 'pan=1c|c0=c1');
+                    execArgs.push('-c:a', 'aac', '-af', 'pan=1c|c0=c1');
+                } else {
+                    execArgs.push('-c:a', 'copy');
                 }
             }
             execArgs.push('output.mp4');
+            
+            showLoading('Merging final video... (Fast Mode)');
             await ff.exec(execArgs);
+
         } else {
-            // Multiple segments, need to use filter_complex to trim and concat
-            const filterParts = [];
-            const concatInputs = [];
-            keepSegments.forEach((seg, i) => {
-                filterParts.push(`[0:v]trim=start=${seg.start}:end=${seg.end},setpts=PTS-STARTPTS[v${i}]`);
-                if (audioMode !== 'none') {
-                    filterParts.push(`[0:a]atrim=start=${seg.start}:end=${seg.end},asetpts=PTS-STARTPTS[a${i}]`);
-                    concatInputs.push(`[v${i}][a${i}]`);
+            // PRECISE RE-ENCODE MODE
+            if (keepSegments.length === 1) {
+                // Only one segment kept, simple trim without concat filter
+                const seg = keepSegments[0];
+                const execArgs = [
+                    '-i', 'input.mp4',
+                    '-ss', seg.start.toString(),
+                    '-to', seg.end.toString(),
+                    '-c:v', 'libx264'
+                ];
+
+                if (audioMode === 'none') {
+                    execArgs.push('-an');
                 } else {
-                    concatInputs.push(`[v${i}]`);
+                    execArgs.push('-c:a', 'aac');
+                    if (audioMode === 'left') {
+                        execArgs.push('-af', 'pan=1c|c0=c0');
+                    } else if (audioMode === 'right') {
+                        execArgs.push('-af', 'pan=1c|c0=c1');
+                    }
                 }
-            });
-            
-            const execArgs = ['-i', 'input.mp4'];
-            let filterString = "";
-            
-            if (audioMode === 'none') {
-                filterString = `${filterParts.join(';')};${concatInputs.join('')}concat=n=${keepSegments.length}:v=1:a=0[outv]`;
-                execArgs.push('-filter_complex', filterString, '-map', '[outv]', '-c:v', 'libx264', '-an', 'output.mp4');
+                execArgs.push('output.mp4');
+                await ff.exec(execArgs);
             } else {
-                filterString = `${filterParts.join(';')};${concatInputs.join('')}concat=n=${keepSegments.length}:v=1:a=1[outv][outa]`;
+                // Multiple segments, need to use filter_complex to trim and concat
+                const filterParts = [];
+                const concatInputs = [];
+                keepSegments.forEach((seg, i) => {
+                    filterParts.push(`[0:v]trim=start=${seg.start}:end=${seg.end},setpts=PTS-STARTPTS[v${i}]`);
+                    if (audioMode !== 'none') {
+                        filterParts.push(`[0:a]atrim=start=${seg.start}:end=${seg.end},asetpts=PTS-STARTPTS[a${i}]`);
+                        concatInputs.push(`[v${i}][a${i}]`);
+                    } else {
+                        concatInputs.push(`[v${i}]`);
+                    }
+                });
                 
-                if (audioMode === 'left') {
-                    filterString += `;[outa]pan=1c|c0=c0[finala]`;
-                    execArgs.push('-filter_complex', filterString, '-map', '[outv]', '-map', '[finala]', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
-                } else if (audioMode === 'right') {
-                    filterString += `;[outa]pan=1c|c0=c1[finala]`;
-                    execArgs.push('-filter_complex', filterString, '-map', '[outv]', '-map', '[finala]', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
+                const execArgs = ['-i', 'input.mp4'];
+                let filterString = "";
+                
+                if (audioMode === 'none') {
+                    filterString = `${filterParts.join(';')};${concatInputs.join('')}concat=n=${keepSegments.length}:v=1:a=0[outv]`;
+                    execArgs.push('-filter_complex', filterString, '-map', '[outv]', '-c:v', 'libx264', '-an', 'output.mp4');
                 } else {
-                    execArgs.push('-filter_complex', filterString, '-map', '[outv]', '-map', '[outa]', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
+                    filterString = `${filterParts.join(';')};${concatInputs.join('')}concat=n=${keepSegments.length}:v=1:a=1[outv][outa]`;
+                    
+                    if (audioMode === 'left') {
+                        filterString += `;[outa]pan=1c|c0=c0[finala]`;
+                        execArgs.push('-filter_complex', filterString, '-map', '[outv]', '-map', '[finala]', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
+                    } else if (audioMode === 'right') {
+                        filterString += `;[outa]pan=1c|c0=c1[finala]`;
+                        execArgs.push('-filter_complex', filterString, '-map', '[outv]', '-map', '[finala]', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
+                    } else {
+                        execArgs.push('-filter_complex', filterString, '-map', '[outv]', '-map', '[outa]', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
+                    }
                 }
+                
+                await ff.exec(execArgs);
             }
-            
-            await ff.exec(execArgs);
         }
 
         const data = await ff.readFile('output.mp4');
