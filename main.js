@@ -67,6 +67,7 @@ function initWavesurfer() {
         barRadius: 2,
         height: wfHeight,
         normalize: true,
+        minPxPerSec: Number(zoomSlider.value) || 1,
         plugins: [
             TimelinePlugin.create({
                 container: '#waveform-timeline',
@@ -85,6 +86,10 @@ function initWavesurfer() {
 
     // Skip logic for regions (preview cuts)
     wavesurfer.on('timeupdate', (currentTime) => {
+        if (currentTimeDisplay) {
+            currentTimeDisplay.textContent = currentTime.toFixed(2);
+        }
+        
         const regions = wsRegions.getRegions();
         for (const region of regions) {
             // If the playhead is inside a region, skip to the end of it

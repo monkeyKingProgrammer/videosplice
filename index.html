@@ -26,13 +26,28 @@
             </div>
 
             <div id="editor-section" class="hidden">
-                <div class="toolbar">
+                <div class="toolbar" style="flex-wrap: wrap;">
                     <button id="btn-play-pause" class="btn">Play</button>
                     <button id="btn-add-region" class="btn danger-btn">Add Cut Region</button>
                     
+                    <div class="precise-cut-tools" style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 6px;">
+                        <input type="number" id="cut-start" placeholder="Start (s)" step="0.1" min="0" style="width: 75px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: var(--text-main); font-size: 0.85rem; padding: 0.3rem; border-radius: 4px; outline: none;">
+                        <input type="number" id="cut-end" placeholder="End (s)" step="0.1" min="0" style="width: 75px; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: var(--text-main); font-size: 0.85rem; padding: 0.3rem; border-radius: 4px; outline: none;">
+                        <button id="btn-add-precise" class="btn danger-btn" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Add Exact</button>
+                    </div>
+
+                    <div class="time-display" style="font-family: monospace; font-size: 1rem; color: var(--primary); background: rgba(0,0,0,0.2); padding: 0.3rem 0.5rem; border-radius: 4px; margin-right: 10px;">
+                        <span id="current-time-display">0.00</span>s
+                    </div>
+
                     <div class="spacer"></div>
+
+                    <div class="zoom-tools" style="display: flex; gap: 8px; align-items: center; margin-right: 10px;">
+                        <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Zoom:</span>
+                        <input type="range" id="zoom-slider" min="1" max="200" value="1" style="width: 80px;">
+                    </div>
                     
-                    <div class="audio-channel-options" style="display: flex; gap: 8px; align-items: center; margin-right: 15px;">
+                    <div class="audio-channel-options" style="display: flex; gap: 8px; align-items: center; margin-right: 10px;">
                         <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">Audio:</span>
                         <select id="audio-channel-select" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: var(--primary); font-family: var(--font); font-size: 0.85rem; padding: 0.3rem; border-radius: 4px; outline: none; cursor: pointer;">
                             <option value="both">Keep Both</option>
